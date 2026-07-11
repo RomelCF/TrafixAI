@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tránsito Cusco — Centro Histórico | AI Control</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            width: 100%;
+            min-height: 100vh;
+            margin: 0 auto;
+            overflow-y: auto;
+            overflow-x: hidden;
+            background-color: #0b1326;
+        }
+        .glass-panel {
+            background: rgba(23, 31, 51, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .ai-glow {
+            box-shadow: 0 0 15px rgba(173, 198, 255, 0.1);
+        }
+        .ai-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(11, 19, 38, 0.5);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(173, 198, 255, 0.2);
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                "surface-tint": "#adc6ff",
+                "surface-container-highest": "#2d3449",
+                "surface-container": "#171f33",
+                "surface-container-high": "#222a3d",
+                "surface-container-low": "#131b2e",
+                "surface-dim": "#0b1326",
+                "background": "#0b1326",
+                "inverse-surface": "#dae2fd",
+                "tertiary-fixed-dim": "#ffb95f",
+                "outline": "#8b90a0",
+                "error-container": "#93000a",
+                "secondary": "#4edea3",
+                "on-tertiary-fixed-variant": "#653e00",
+                "on-primary-container": "#00285c",
+                "on-surface": "#dae2fd",
+                "surface-bright": "#31394d",
+                "tertiary-fixed": "#ffddb8",
+                "on-surface-variant": "#c1c6d7",
+                "on-secondary-container": "#00311f",
+                "primary-fixed-dim": "#adc6ff",
+                "tertiary": "#ffb95f",
+                "secondary-container": "#00a572",
+                "primary": "#adc6ff",
+                "on-secondary": "#003824",
+                "on-secondary-fixed-variant": "#005236",
+                "surface-variant": "#2d3449",
+                "inverse-on-surface": "#283044",
+                "surface": "#0b1326",
+                "secondary-fixed-dim": "#4edea3",
+                "primary-fixed": "#d8e2ff",
+                "outline-variant": "#414755",
+                "surface-container-lowest": "#060e20",
+                "on-tertiary-container": "#3e2400",
+                "on-error-container": "#ffdad6",
+                "on-tertiary-fixed": "#2a1700",
+                "error": "#ffb4ab",
+                "on-secondary-fixed": "#002113",
+                "inverse-primary": "#005bc1",
+                "secondary-fixed": "#6ffbbe",
+                "primary-container": "#4b8eff",
+                "on-primary-fixed": "#001a41",
+                "on-error": "#690005",
+                "on-background": "#dae2fd"
+              },
+              "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+              },
+              "spacing": {
+                "gutter": "16px",
+                "margin-edge": "24px",
+                "container-padding": "20px",
+                "widget-gap": "12px",
+                "unit": "4px"
+              },
+              "fontFamily": {
+                "label-caps": ["Hanken Grotesk"],
+                "data-sm": ["JetBrains Mono"],
+                "data-lg": ["JetBrains Mono"],
+                "body-lg": ["Hanken Grotesk"],
+                "display-lg": ["Hanken Grotesk"],
+                "headline-md": ["Hanken Grotesk"],
+                "headline-lg": ["Hanken Grotesk"],
+                "body-md": ["Hanken Grotesk"]
+              },
+              "fontSize": {
+                "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                "data-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                "data-lg": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface font-body-md custom-scrollbar overflow-x-hidden">
+
+<header class="sticky top-0 z-[100] flex flex-col md:flex-row justify-between items-center px-margin-edge py-3 w-full bg-surface border-b border-outline-variant shadow-md gap-4">
+<div class="flex items-center gap-6 w-full md:w-auto">
+<h1 class="text-body-lg md:text-headline-md font-headline-md font-bold text-on-surface tracking-tight truncate">Tránsito Cusco — Centro Histórico</h1>
+<div class="hidden sm:flex items-center gap-4 border-l border-outline-variant pl-6">
+<span class="font-data-sm text-data-sm text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">schedule</span> 08:42
+                </span>
+</div>
+</div>
+<div class="flex items-center gap-2 flex-wrap justify-center md:justify-end w-full md:w-auto">
+<button class="flex items-center gap-2 px-3 py-1.5 rounded bg-secondary/10 border border-secondary/40 text-secondary hover:bg-secondary/20 transition-all" id="ai-toggle-btn">
+<span class="material-symbols-outlined text-[18px] ai-pulse">auto_awesome</span>
+<span class="text-[10px] font-label-caps uppercase tracking-wider">IA Activa</span>
+<div class="w-8 h-4 bg-secondary/30 rounded-full relative">
+<div class="absolute right-0.5 top-0.5 w-3 h-3 bg-secondary rounded-full shadow-sm"></div>
+</div>
+</button>
+<button class="hidden lg:flex items-center gap-1 px-3 py-1.5 rounded hover:bg-surface-container-highest transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">pause</span>
+<span class="text-[11px] font-label-caps uppercase tracking-wider">Pausar</span>
+</button>
+<button class="hidden lg:flex items-center gap-1 px-3 py-1.5 rounded hover:bg-surface-container-highest transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+<span class="text-[11px] font-label-caps uppercase tracking-wider">Reiniciar</span>
+</button>
+<button class="hidden lg:flex items-center gap-1 px-3 py-1.5 rounded hover:bg-surface-container-highest transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">fast_forward</span>
+<span class="text-[11px] font-label-caps uppercase tracking-wider">Adelantar 1h</span>
+</button>
+<button class="flex items-center gap-2 px-4 py-1.5 bg-secondary-container text-on-secondary-container rounded font-label-caps text-[11px] uppercase tracking-wider hover:bg-secondary-container/90 transition-all">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                Exportar
+            </button>
+</div>
+</header>
+<main class="p-gutter flex flex-col gap-gutter max-w-[1600px] mx-auto w-full">
+
+<div class="flex flex-col gap-widget-gap">
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-widget-gap">
+<div class="glass-panel p-4 rounded-xl flex flex-col justify-between min-h-[90px]">
+<span class="font-label-caps text-[9px] text-on-surface-variant uppercase">Congestión Global</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-data-lg font-data-lg text-error">54%</span>
+<span class="text-[10px] text-error flex items-center font-data-sm"><span class="material-symbols-outlined text-[12px]">arrow_upward</span>3%</span>
+</div>
+<div class="h-1 bg-outline-variant w-full mt-2 rounded-full overflow-hidden">
+<div class="h-full bg-error w-[54%]"></div>
+</div>
+</div>
+<div class="glass-panel p-4 rounded-xl flex flex-col justify-between min-h-[90px]">
+<span class="font-label-caps text-[9px] text-on-surface-variant uppercase">Velocidad Prom.</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-data-lg font-data-lg text-secondary">1.6</span>
+<span class="text-data-sm text-secondary ml-1">km/h</span>
+</div>
+<p class="text-[9px] text-secondary/70 flex items-center gap-1 mt-1 font-label-caps">
+<span class="material-symbols-outlined text-[10px]">trending_up</span> +0.2 vs avg
+                    </p>
+</div>
+<div class="glass-panel p-4 rounded-xl flex flex-col justify-between min-h-[90px]">
+<span class="font-label-caps text-[9px] text-on-surface-variant uppercase">Vehículos Activos</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-data-lg font-data-lg">87</span>
+<span class="text-data-sm opacity-60">/120</span>
+</div>
+<div class="h-1 bg-outline-variant w-full mt-2 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[72%]"></div>
+</div>
+</div>
+<div class="glass-panel p-4 rounded-xl flex flex-col justify-between min-h-[90px]">
+<span class="font-label-caps text-[9px] text-on-surface-variant uppercase">Detenidos</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-data-lg font-data-lg text-error">23</span>
+<span class="text-[10px] text-error font-data-sm flex items-center">↑26%</span>
+</div>
+<div class="h-1 bg-outline-variant w-full mt-2 rounded-full overflow-hidden">
+<div class="h-full bg-error/50 w-[23%]"></div>
+</div>
+</div>
+<div class="glass-panel p-4 rounded-xl flex flex-col justify-between min-h-[90px]">
+<span class="font-label-caps text-[9px] text-on-surface-variant uppercase">Espera Prom.</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-data-lg font-data-lg text-primary">2.4</span>
+<span class="text-data-sm text-primary ml-1">min</span>
+</div>
+<p class="text-[9px] text-primary/70 flex items-center gap-1 mt-1 font-label-caps">Estable</p>
+</div>
+<div class="glass-panel p-4 rounded-xl min-h-[90px]">
+<span class="font-label-caps text-[9px] text-on-surface-variant uppercase">Efect. Semáforos</span>
+<div class="flex items-baseline justify-between mt-1">
+<span class="text-data-lg font-data-lg text-secondary">72%</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">verified</span>
+</div>
+<div class="h-1 bg-outline-variant w-full mt-2 rounded-full overflow-hidden">
+<div class="h-full bg-secondary w-[72%]"></div>
+</div>
+</div>
+<div class="glass-panel p-4 rounded-xl min-h-[90px]">
+<span class="font-label-caps text-[9px] text-on-surface-variant uppercase">Tiempo Medio Viaje</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-data-lg font-data-lg text-primary">18.5</span>
+<span class="text-data-sm text-primary">min</span>
+</div>
+<p class="text-[9px] text-secondary/70 flex items-center gap-1 mt-1 font-label-caps">
+<span class="material-symbols-outlined text-[10px]">trending_down</span> -2.1 vs avg
+                    </p>
+</div>
+<div class="glass-panel p-4 rounded-xl flex items-center justify-between min-h-[90px]">
+<div>
+<span class="font-label-caps text-[9px] text-on-surface-variant uppercase">Nivel Servicio (LOS)</span>
+<p class="text-[11px] text-on-surface/70 mt-1">Regular</p>
+</div>
+<div class="w-10 h-10 rounded-full border-2 border-tertiary flex items-center justify-center text-tertiary font-bold text-lg">D</div>
+</div>
+<div class="glass-panel p-4 rounded-xl min-h-[90px]">
+<span class="font-label-caps text-[9px] text-on-surface-variant uppercase">Emisiones CO₂</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-data-lg font-data-lg text-error">142</span>
+<span class="text-data-sm text-error">kg/h</span>
+</div>
+<div class="h-1 bg-outline-variant w-full mt-2 rounded-full overflow-hidden">
+<div class="h-full bg-error w-[65%]"></div>
+</div>
+</div>
+<div class="glass-panel p-4 rounded-xl min-h-[90px]">
+<span class="font-label-caps text-[9px] text-on-surface-variant uppercase">Accidentes</span>
+<div class="flex items-center justify-between mt-1">
+<span class="text-data-lg font-data-lg text-secondary">0</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">check_circle</span>
+</div>
+<p class="text-[9px] text-secondary/70 mt-1 font-label-caps">Sin reportes</p>
+</div>
+</div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-12 gap-widget-gap">
+
+<div class="md:col-span-3 flex flex-col gap-widget-gap order-2 md:order-1">
+
+<div class="glass-panel rounded-xl flex flex-col min-h-[250px]">
+<div class="p-3 border-b border-outline-variant bg-surface-container-high/30 flex items-center justify-between">
+<h3 class="font-label-caps text-[11px] flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-[18px]">fact_check</span> Diagnóstico por Zona
+                        </h3>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar">
+<table class="w-full text-left font-data-sm text-[11px]">
+<thead class="bg-surface-container-high/20 sticky top-0">
+<tr class="border-b border-outline-variant">
+<th class="p-3">Zona</th>
+<th class="p-3">Nivel</th>
+<th class="p-3">Cong.</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<tr><td class="p-3 font-bold">Centro Hist.</td><td class="p-3"><span class="bg-error/10 text-error px-1.5 py-0.5 rounded border border-error/20 text-[9px]">Crítico</span></td><td class="p-3 text-error">78%</td></tr>
+<tr><td class="p-3 font-bold">San Pedro</td><td class="p-3"><span class="bg-tertiary/10 text-tertiary px-1.5 py-0.5 rounded border border-tertiary/20 text-[9px]">Congest.</span></td><td class="p-3 text-tertiary">61%</td></tr>
+<tr><td class="p-3 font-bold">San Blas</td><td class="p-3"><span class="bg-tertiary/10 text-tertiary px-1.5 py-0.5 rounded border border-tertiary/20 text-[9px]">Mod.</span></td><td class="p-3">43%</td></tr>
+<tr><td class="p-3 font-bold">Av. El Sol</td><td class="p-3"><span class="bg-secondary/10 text-secondary px-1.5 py-0.5 rounded border border-secondary/20 text-[9px]">Fluido</span></td><td class="p-3">28%</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="glass-panel rounded-xl flex flex-col min-h-[200px]">
+<div class="p-3 border-b border-outline-variant bg-surface-container-high/30">
+<h3 class="font-label-caps text-[11px] flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-[18px]">traffic</span> Monitoreo Intersecciones
+                        </h3>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar">
+<table class="w-full text-left font-data-sm text-[11px]">
+<thead class="bg-surface-container-high/20 sticky top-0">
+<tr class="border-b border-outline-variant">
+<th class="p-3">Intersección</th>
+<th class="p-3">Espera</th>
+<th class="p-3">LOS</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<tr><td class="p-3 font-bold">Plaza Mayor</td><td class="p-3">48 s</td><td class="p-3 text-error font-bold">E</td></tr>
+<tr><td class="p-3 font-bold">Av. Sol / Tullu.</td><td class="p-3">32 s</td><td class="p-3 text-tertiary font-bold">D</td></tr>
+<tr><td class="p-3 font-bold">San Pedro / Sol</td><td class="p-3">55 s</td><td class="p-3 text-error font-bold">F</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="glass-panel rounded-xl p-4 flex flex-col">
+<h3 class="font-label-caps text-[11px] flex items-center gap-2 mb-4 text-on-surface">
+<span class="material-symbols-outlined text-[18px]">directions_car</span> Composición Flota
+                    </h3>
+<div class="space-y-4">
+<div class="space-y-1">
+<div class="flex justify-between text-[10px] font-data-sm"><span>Particulares</span><span>65%</span></div>
+<div class="h-1.5 bg-outline-variant rounded-full overflow-hidden"><div class="h-full bg-primary w-[65%]"></div></div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between text-[10px] font-data-sm"><span>Transporte Público</span><span>25%</span></div>
+<div class="h-1.5 bg-outline-variant rounded-full overflow-hidden"><div class="h-full bg-secondary w-[25%]"></div></div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between text-[10px] font-data-sm"><span>Carga/Logística</span><span>10%</span></div>
+<div class="h-1.5 bg-outline-variant rounded-full overflow-hidden"><div class="h-full bg-tertiary w-[10%]"></div></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="md:col-span-6 flex flex-col gap-widget-gap order-1 md:order-2">
+<div class="glass-panel rounded-xl overflow-hidden flex-1 flex flex-col relative border-primary/20 border min-h-[400px] md:min-h-[600px] lg:min-h-[800px]">
+<div class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container shrink-0">
+<h3 class="font-label-caps text-label-caps flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-[18px]">videocam</span> Simulación en tiempo real
+                        </h3>
+<div class="flex items-center gap-4">
+<span class="hidden sm:flex text-[10px] font-label-caps text-on-surface-variant items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary ai-pulse"></span> VIVO
+                            </span>
+<div class="flex gap-2">
+<button class="p-1 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-[20px]">zoom_in</span></button>
+<button class="p-1 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-[20px]">fullscreen</span></button>
+</div>
+</div>
+</div>
+<div class="relative flex-1 bg-surface-container-lowest overflow-hidden">
+<img alt="Map" class="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-screen" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBul6sd_5N0Qnusw5KEJ0Ar9f5ZglCkc7R_KLFftUXFQZv07T8eq4C5sBZCVUDUnDjYzXUMXLSxiVAlflBAsSF7lkoFQFUrWaXIQrB3MDVZAxvyyLqefDrNQUdJov22zRxfx_c3w6sc7g_Ka8RkuBswPat11AgEMKnXxrVbNh_C7SzrPsMt2_7hAYYDB9AseyssqtQhWlQS1oF1JdwX7IXPam6Y4YmKP8bJnv8xdWE18ckLNqnmKTRWk9zBV8c1-wXgCqy1stWMI-Q"/>
+<div class="absolute inset-0 z-10 flex items-center justify-center p-4">
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-8 w-full max-w-[500px]">
+<div class="bg-error/30 border border-error/40 p-4 text-center rounded-xl backdrop-blur-md">
+<span class="text-[10px] font-bold block mb-1 font-label-caps uppercase text-white">Centro Histórico</span>
+<span class="text-[16px] md:text-[20px] font-data-lg text-white">CRÍTICO</span>
+</div>
+<div class="bg-tertiary/20 border border-tertiary/40 p-4 text-center rounded-xl backdrop-blur-md">
+<span class="text-[10px] font-bold block mb-1 font-label-caps uppercase text-white">San Blas</span>
+<span class="text-[16px] md:text-[20px] font-data-lg text-white">43%</span>
+</div>
+<div class="bg-tertiary/20 border border-tertiary/40 p-4 text-center rounded-xl backdrop-blur-md">
+<span class="text-[10px] font-bold block mb-1 font-label-caps uppercase text-white">San Pedro</span>
+<span class="text-[16px] md:text-[20px] font-data-lg text-white">61%</span>
+</div>
+<div class="bg-secondary/20 border border-secondary/40 p-4 text-center rounded-xl backdrop-blur-md">
+<span class="text-[10px] font-bold block mb-1 font-label-caps uppercase text-white">Av. El Sol</span>
+<span class="text-[16px] md:text-[20px] font-data-lg text-white">FLUIDO</span>
+</div>
+</div>
+</div>
+<div class="absolute bottom-6 left-6 z-20">
+<div class="glass-panel px-4 py-2 rounded-lg border-l-4 border-secondary">
+<p class="text-[8px] font-label-caps text-on-surface-variant/60 tracking-widest mb-1 uppercase">Tendencia Actual</p>
+<p class="text-secondary flex items-center gap-2 font-bold text-[11px] font-data-sm">
+<span class="material-symbols-outlined text-[14px]">trending_down</span> -8% Proyectado (15m)
+                                </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="md:col-span-3 flex flex-col gap-widget-gap order-3">
+
+<div class="glass-panel rounded-xl p-4 border-l-4 border-primary">
+<h3 class="font-label-caps text-label-caps flex items-center gap-2 text-on-surface mb-3">
+<span class="material-symbols-outlined text-[18px]">chat_bubble</span> Módulo LLM <span class="text-primary/60 ml-1">v3</span>
+</h3>
+<div class="font-data-sm text-[11px] leading-relaxed text-on-surface/80">
+<p>La saturación en <span class="text-error font-bold">Centro Histórico</span> deriva de embudos en <span class="text-tertiary font-bold">San Pedro</span>. IA sugiere ajuste en <span class="text-primary font-bold">Eje El Sol</span>.</p>
+</div>
+<div class="mt-4 flex gap-2">
+<button class="flex-1 py-1.5 rounded bg-surface-container-highest text-[9px] font-label-caps hover:bg-primary/20 transition-all border border-outline-variant">EXPLICAR</button>
+<button class="flex-1 py-1.5 rounded bg-primary text-on-primary text-[9px] font-label-caps hover:bg-primary/90 transition-all">ACCIONAR</button>
+</div>
+</div>
+
+<div class="glass-panel rounded-xl p-4 flex flex-col flex-1 min-h-[300px] overflow-hidden">
+<h3 class="font-label-caps text-label-caps flex items-center gap-2 mb-4 text-on-surface">
+<span class="material-symbols-outlined text-[18px]">list_alt</span> Log de Acciones
+                    </h3>
+<div class="space-y-4 font-data-sm text-[10px] overflow-y-auto custom-scrollbar flex-1 pr-1">
+<div class="flex gap-3 items-start"><span class="opacity-40 shrink-0 font-data-sm mt-0.5">08:41</span><div class="flex-1"><span class="bg-error/20 text-error px-1.5 py-0.5 rounded text-[9px] font-bold mb-1 inline-block uppercase">Acceso</span><p class="text-on-surface/70 leading-tight">Restricción vehicular activa en núcleo histórico.</p></div></div>
+<div class="flex gap-3 items-start"><span class="opacity-40 shrink-0 font-data-sm mt-0.5">08:40</span><div class="flex-1"><span class="bg-primary/20 text-primary px-1.5 py-0.5 rounded text-[9px] font-bold mb-1 inline-block uppercase">Ruta</span><p class="text-on-surface/70 leading-tight">Desvío sugerido San Pedro → Eje El Sol.</p></div></div>
+<div class="flex gap-3 items-start"><span class="opacity-40 shrink-0 font-data-sm mt-0.5">08:39</span><div class="flex-1"><span class="bg-secondary/20 text-secondary px-1.5 py-0.5 rounded text-[9px] font-bold mb-1 inline-block uppercase">Semáforo</span><p class="text-on-surface/70 leading-tight">S-04 N-S ajustado +12s fase verde.</p></div></div>
+<div class="flex gap-3 items-start"><span class="opacity-40 shrink-0 font-data-sm mt-0.5">08:35</span><div class="flex-1"><span class="bg-surface-container-highest text-on-surface-variant px-1.5 py-0.5 rounded text-[9px] font-bold mb-1 inline-block uppercase">Sistema</span><p class="text-on-surface/70 leading-tight">Calibración de sensores terminada.</p></div></div>
+</div>
+</div>
+
+<div class="glass-panel rounded-xl p-4">
+<h3 class="font-label-caps text-label-caps flex items-center gap-2 mb-4 text-on-surface">
+<span class="material-symbols-outlined text-[18px]">troubleshoot</span> Impacto Predictivo
+                    </h3>
+<div class="space-y-2">
+<div class="flex justify-between items-center text-[10px] p-2 bg-surface-container-highest/30 rounded border border-outline-variant/10">
+<span class="text-on-surface-variant">Congestión (30m)</span>
+<span class="text-secondary font-bold font-data-sm">-14.2%</span>
+</div>
+<div class="flex justify-between items-center text-[10px] p-2 bg-surface-container-highest/30 rounded border border-outline-variant/10">
+<span class="text-on-surface-variant">Velocidad Media</span>
+<span class="text-secondary font-bold font-data-sm">+0.4 km/h</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<section class="mt-4 pb-12">
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">analytics</span> Analítica Técnica de Tráfico
+                </h2>
+<div class="flex gap-2 w-full sm:w-auto">
+<button class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg bg-surface-container-high border border-outline-variant text-[10px] font-label-caps uppercase tracking-wider text-on-surface-variant hover:text-on-surface transition-colors">Semanal</button>
+<button class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/30 text-[10px] font-label-caps uppercase tracking-wider text-primary">Diario (Actual)</button>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-widget-gap">
+
+<div class="glass-panel rounded-xl p-5 flex flex-col h-[320px]">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-label-caps text-label-caps text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary">speed</span> Velocidad vs Tiempo (km/h)
+                        </h3>
+<span class="text-data-sm text-secondary font-bold">1.6 km/h Avg</span>
+</div>
+<div class="flex-1 relative bg-surface-container-low/50 rounded-lg border border-outline-variant/10 overflow-hidden p-4">
+<div class="absolute top-4 right-4 flex gap-3 text-[9px] font-label-caps text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-secondary"></span> Actual</span>
+</div>
+<svg class="w-full h-full text-secondary/30" preserveaspectratio="none" viewbox="0 0 100 100">
+<path d="M0,80 L10,75 L20,85 L30,60 L40,65 L50,40 L60,45 L70,30 L80,35 L90,20 L100,15" fill="none" stroke="currentColor" stroke-width="2"></path>
+</svg>
+<div class="absolute bottom-2 left-4 right-4 flex justify-between text-[8px] font-data-sm text-on-surface-variant/40">
+<span>04:00</span><span>06:00</span><span>08:00</span><span>10:00</span><span>12:00</span>
+</div>
+</div>
+</div>
+
+<div class="glass-panel rounded-xl p-5 flex flex-col h-[320px]">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-label-caps text-label-caps text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">moving</span> Flujo vs Tiempo (veh/min)
+                        </h3>
+<span class="text-data-sm text-primary font-bold">4.2 Flux</span>
+</div>
+<div class="flex-1 relative bg-surface-container-low/50 rounded-lg border border-outline-variant/10 overflow-hidden p-4">
+<svg class="w-full h-full text-primary/40" preserveaspectratio="none" viewbox="0 0 100 100">
+<path d="M0,90 Q15,80 30,50 T60,40 T100,10" fill="none" stroke="currentColor" stroke-width="3"></path>
+<path d="M0,100 L0,90 Q15,80 30,50 T60,40 T100,10 L100,100 Z" fill="currentColor" fill-opacity="0.1"></path>
+</svg>
+<div class="absolute bottom-2 left-4 right-4 flex justify-between text-[8px] font-data-sm text-on-surface-variant/40">
+<span>04:00</span><span>06:00</span><span>08:00</span><span>10:00</span><span>12:00</span>
+</div>
+</div>
+</div>
+
+<div class="glass-panel rounded-xl p-5 flex flex-col h-[320px]">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-label-caps text-label-caps text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-error">emergency_share</span> Congestión vs Tiempo (%)
+                        </h3>
+<span class="text-data-sm text-error font-bold">54% Peak</span>
+</div>
+<div class="flex-1 relative bg-surface-container-low/50 rounded-lg border border-outline-variant/10 overflow-hidden p-4">
+<svg class="w-full h-full text-error/30" preserveaspectratio="none" viewbox="0 0 100 100">
+<path d="M0,90 L20,85 L40,70 L60,30 L80,40 L100,10" fill="none" stroke="#ffb4ab" stroke-width="2.5"></path>
+</svg>
+<div class="absolute bottom-2 left-4 right-4 flex justify-between text-[8px] font-data-sm text-on-surface-variant/40">
+<span>04:00</span><span>06:00</span><span>08:00</span><span>10:00</span><span>12:00</span>
+</div>
+</div>
+</div>
+
+<div class="glass-panel rounded-xl p-5 flex flex-col h-[320px]">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-label-caps text-label-caps text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-tertiary">grid_view</span> Ocupación Vial vs Tiempo
+                        </h3>
+<span class="text-data-sm text-tertiary font-bold">78% Usage</span>
+</div>
+<div class="flex-1 relative bg-surface-container-low/50 rounded-lg border border-outline-variant/10 overflow-hidden p-4">
+<svg class="w-full h-full text-tertiary/40" preserveaspectratio="none" viewbox="0 0 100 100">
+<rect fill="currentColor" height="15" width="5" x="5" y="85"></rect>
+<rect fill="currentColor" height="25" width="5" x="15" y="75"></rect>
+<rect fill="currentColor" height="35" width="5" x="25" y="65"></rect>
+<rect fill="currentColor" height="55" width="5" x="35" y="45"></rect>
+<rect fill="currentColor" height="75" width="5" x="45" y="25"></rect>
+<rect fill="currentColor" height="65" width="5" x="55" y="35"></rect>
+<rect fill="currentColor" height="80" width="5" x="65" y="20"></rect>
+<rect fill="currentColor" height="70" width="5" x="75" y="30"></rect>
+<rect fill="currentColor" height="85" width="5" x="85" y="15"></rect>
+<rect fill="currentColor" height="95" width="5" x="95" y="5"></rect>
+</svg>
+<div class="absolute bottom-2 left-4 right-4 flex justify-between text-[8px] font-data-sm text-on-surface-variant/40">
+<span>04:00</span><span>06:00</span><span>08:00</span><span>10:00</span><span>12:00</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<footer class="mt-8 flex justify-between items-center px-margin-edge py-6 bg-surface border-t border-outline-variant z-50 shrink-0">
+<div class="text-[10px] font-label-caps text-on-surface-variant/60 uppercase tracking-widest">
+        Sistema de simulacion de tráfico 
+    </div>
+<div class="flex gap-4">
+</div>
+</footer>
+<script>
+        
+        document.querySelectorAll('.glass-panel').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-2px)';
+                card.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                card.classList.add('ai-glow');
+                card.style.borderColor = 'rgba(173, 198, 255, 0.2)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+                card.classList.remove('ai-glow');
+                card.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+            });
+        });
+
+        const aiBtn = document.getElementById('ai-toggle-btn');
+        if(aiBtn) {
+            aiBtn.addEventListener('click', () => {
+                const isActive = aiBtn.classList.contains('text-secondary');
+                if(isActive) {
+                    aiBtn.classList.remove('bg-secondary/10', 'border-secondary/40', 'text-secondary');
+                    aiBtn.classList.add('bg-surface-container-highest', 'border-outline-variant', 'text-on-surface-variant');
+                    aiBtn.querySelector('.ai-pulse').classList.remove('ai-pulse');
+                    aiBtn.querySelector('.bg-secondary').classList.replace('bg-secondary', 'bg-outline');
+                    aiBtn.querySelector('.absolute').classList.replace('right-0.5', 'left-0.5');
+                    aiBtn.querySelector('span:nth-child(2)').innerText = 'IA Inactiva';
+                } else {
+                    aiBtn.classList.add('bg-secondary/10', 'border-secondary/40', 'text-secondary');
+                    aiBtn.classList.remove('bg-surface-container-highest', 'border-outline-variant', 'text-on-surface-variant');
+                    aiBtn.querySelector('.material-symbols-outlined').classList.add('ai-pulse');
+                    aiBtn.querySelector('.bg-outline').classList.replace('bg-outline', 'bg-secondary');
+                    aiBtn.querySelector('.absolute').classList.replace('left-0.5', 'right-0.5');
+                    aiBtn.querySelector('span:nth-child(2)').innerText = 'IA Activa';
+                }
+            });
+        }
+    </script>
+</body></html>

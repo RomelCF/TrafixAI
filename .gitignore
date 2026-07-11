@@ -1,0 +1,80 @@
+# ─── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+*.so
+
+# Entornos virtuales
+venv/
+env/
+.venv/
+.env/
+ENV/
+
+# Pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+
+# ─── Node / React ─────────────────────────────────────────────────────────────
+node_modules/
+dashboard-react/dist/
+dashboard-react/.vite/
+dashboard-react/coverage/
+.npm
+*.tsbuildinfo
+
+# ─── Modelos ML entrenados (archivos grandes) ─────────────────────────────────
+# Descomenta estas líneas si prefieres no versionar los modelos binarios
+# backend/ml_models/*.pkl
+# backend/ml_models/*.pt
+
+# ─── Logs y bases de datos temporales ────────────────────────────────────────
+*.log
+*.sqlite3
+*.db
+
+# ─── Sistema operativo ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── IDEs y editores ──────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ─── Variables de entorno y secretos ─────────────────────────────────────────
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ─── Scripts temporales / de diagnóstico ─────────────────────────────────────
+test_*.py
+scratch_*.py

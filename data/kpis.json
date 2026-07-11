@@ -1,0 +1,65 @@
+{
+  "velocidad_promedio": {
+    "nombre": "Velocidad Promedio",
+    "descripcion": "Velocidad media de todos los vehículos activos en la red",
+    "unidad": "km/h",
+    "umbrales": {
+      "critico": 5.0,
+      "alerta": 15.0
+    }
+  },
+  "congestion_global": {
+    "nombre": "Congestión Global",
+    "descripcion": "Nivel de congestión acumulado basado en la densidad e interrupciones",
+    "unidad": "%",
+    "umbrales": {
+      "critico": 70.0,
+      "alerta": 40.0
+    }
+  },
+  "tiempo_espera_promedio": {
+    "nombre": "Tiempo de Espera Promedio",
+    "descripcion": "Tiempo medio acumulado en detención por semáforo o cola",
+    "unidad": "s",
+    "umbrales": {
+      "critico": 60.0,
+      "alerta": 30.0
+    }
+  },
+  "nivel_servicio": {
+    "nombre": "Nivel de Servicio",
+    "descripcion": "Clasificación cualitativa del flujo de tráfico (Highway Capacity Manual)",
+    "unidad": "LOS",
+    "umbrales": {
+      "critico": "F",
+      "alerta": "D"
+    }
+  },
+  "efectividad_semaforos": {
+    "nombre": "Efectividad de Semáforos",
+    "descripcion": "Porcentaje de tiempo de movimiento vs tiempo retenido en semáforos",
+    "unidad": "%",
+    "umbrales": {
+      "critico": 40.0,
+      "alerta": 65.0
+    }
+  },
+  "emisiones_co2_estimadas": {
+    "nombre": "Emisiones de CO2 Estimadas",
+    "descripcion": "Estimación teórica de emisiones basadas en el ralentí y aceleración",
+    "unidad": "kg/h",
+    "umbrales": {
+      "critico": 15.0,
+      "alerta": 8.0
+    }
+  },
+  "throughput": {
+    "nombre": "Throughput",
+    "descripcion": "Flujo de vehículos que completan su recorrido por unidad de tiempo",
+    "unidad": "veh/min",
+    "umbrales": {
+      "critico": 2.0,
+      "alerta": 5.0
+    }
+  }
+}

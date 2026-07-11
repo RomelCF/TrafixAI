@@ -1,0 +1,64 @@
+{
+  "centro_historico": {
+    "nombre": "Centro Histórico del Cusco",
+    "ancho": 1600,
+    "alto": 1000,
+    "max_vehiculos": 120,
+    "limite_atascado_frames": 720,
+    "rango_generacion": [1.0, 3.0],
+    "ia_activa_defecto": true,
+    "zonas": {
+      "Centro histórico": {
+        "box": [350, 250, 850, 700],
+        "capacidad": 25.0
+      },
+      "San Pedro": {
+        "box": [0, 620, 420, 900],
+        "capacidad": 15.0
+      },
+      "San Blas": {
+        "box": [650, 40, 1120, 320],
+        "capacidad": 12.0
+      },
+      "Eje Av. El Sol": {
+        "box": [0, 340, 1600, 470],
+        "capacidad": 30.0
+      },
+      "Zona Este": {
+        "box": [900, 300, 1600, 900],
+        "capacidad": 30.0
+      }
+    }
+  },
+  "angostura": {
+    "nombre": "Sector de la Angostura (Vía de Evitamiento)",
+    "ancho": 1600,
+    "alto": 1000,
+    "max_vehiculos": 100,
+    "limite_atascado_frames": 720,
+    "rango_generacion": [1.0, 3.0],
+    "ia_activa_defecto": true,
+    "zonas": {
+      "Calle 1": {
+        "box": [0, 651, 1600, 1000],
+        "capacidad": 30.0
+      },
+      "Calle 2": {
+        "box": [640, 352, 1466, 633],
+        "capacidad": 20.0
+      },
+      "Calle 3-4": {
+        "box": [573, 246, 1106, 915],
+        "capacidad": 15.0
+      },
+      "Calle 5-6": {
+        "box": [1200, 528, 1546, 1000],
+        "capacidad": 15.0
+      },
+      "Zona Norte": {
+        "box": [973, 0, 1106, 457],
+        "capacidad": 10.0
+      }
+    }
+  }
+}
