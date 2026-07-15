@@ -48,72 +48,129 @@ class GestorMLTrafico:
                 self.predictor, self.classifier = self.manager.load_models()
             except Exception as e:
                 print(f"[ML] Error cargando modelos RandomForest: {e}")
-                
+
             if self.predictor is None:
                 self.predictor = TrafficPredictor()
             if self.classifier is None:
                 self.classifier = TrafficClassifier()
-                
+
+            # ── Verificar que los modelos estén entrenados con el CSV real ──
+            # Si el predictor o clasificador no tienen is_trained=True (ocurre cuando
+            # los .pkl existen pero fueron guardados sin entrenar, o al usar instancias
+            # nuevas), entrenar desde data/aforo_vehicular.csv en segundo plano.
+            # Esto evita que el RF devuelva "Fluido" para todo al activar la IA.
+            needs_train = (
+                not getattr(self.predictor, 'is_trained', False) or
+                not getattr(self.classifier, 'is_trained', False)
+            )
+            if needs_train:
+                import threading
+                threading.Thread(
+                    target=self._entrenar_desde_csv_y_guardar,
+                    daemon=True
+                ).start()
+
             try:
                 self.rl_agent = SemaforoRLAgent(state_dim=20, action_dim=7)
                 rl_model_path = os.path.join(self.models_dir, 'dqn_semaforos.pt')
                 self.rl_agent.load(rl_model_path)
             except Exception as e:
                 print(f"[ML] Error cargando agente RL PyTorch: {e}")
-        
+
         self.last_state = {}
         self.last_action = {}
         self.step_counter = 0
         self.last_prediction_probs = [0.25, 0.25, 0.25, 0.25]
 
+    def _entrenar_desde_csv_y_guardar(self):
+        """
+        Entrena predictor y clasificador RandomForest usando el archivo
+        data/aforo_vehicular.csv (derivado del Excel de aforo vehicular de Cusco
+        procesado por process_dataset.py).  Se ejecuta en background para no
+        bloquear el hilo de simulación.  Una vez entrenados, guarda los .pkl
+        nuevos en ml_models/ para que la próxima ejecución los cargue.
+        """
+        try:
+            print("[ML] Entrenando RandomForest desde aforo_vehicular.csv ...")
+            ok_pred = self.predictor.train_from_csv()
+            ok_clf  = self.classifier.train_from_csv()
+            if ok_pred and ok_clf:
+                self.manager.save_models(self.predictor, self.classifier)
+                print("[ML] Modelos RandomForest entrenados y guardados desde CSV.")
+            else:
+                print("[ML] CSV no disponible; usando heurística de reglas como fallback.")
+        except Exception as e:
+            print(f"[ML] Error durante entrenamiento background desde CSV: {e}")
+
     def obtener_features_globales(self, sim):
         hour = sim.hora_simulada
         day = 0
-        
+
         vehs = sim.vehiculos
         total = len(vehs)
-        
-        if total == 0:
-            return np.array([[hour, day, 0, 0.25, 0.25, 0.1, 0.1, 0.3]], dtype=np.float32)
-            
-        autos = sum(1 for v in vehs if getattr(v.tipo, 'name', '') in ['AUTO', 'TAXI'])
-        pickups = sum(1 for v in vehs if getattr(v.tipo, 'name', '') == 'PICKUP')
-        buses = sum(1 for v in vehs if getattr(v.tipo, 'name', '') == 'BUS')
-        urbanos = sum(1 for v in vehs if getattr(v.tipo, 'name', '') in ['TRANSP_URBANO', 'COMBI'])
-        trucks = sum(1 for v in vehs if getattr(v.tipo, 'name', '') in ['CAMION_LIGERO', 'CAMION_MEDIANO', 'CAMION_PESADO', 'ARTICULADOS', 'ARTICULADO'])
-        
-        auto_r = autos / total
-        pickup_r = pickups / total
-        bus_r = buses / total
-        urban_r = urbanos / total
-        trucks_r = trucks / total
-        
-        feat = [hour, day, float(total), auto_r, pickup_r, bus_r, urban_r, trucks_r]
-        return np.array([feat], dtype=np.float32)
 
-    def obtener_features_zona(self, sim, x1, y1, x2, y2):
-        hour = sim.hora_simulada
-        day = 0
-        
-        vehs = [v for v in sim.vehiculos if x1 <= v.posicion.x <= x2 and y1 <= v.posicion.y <= y2]
-        total = len(vehs)
-        
+        # ── Normalización de escala ───────────────────────────────────────────
+        # El RF fue entrenado con flujo de aforo real (0-280 veh/15 min).
+        # La simulación tiene máx ~120 veh globales en pantalla.
+        # Escala: (total / 120) * 220 → 0 veh = 0, 120 veh = 220 (aforo pico).
+        MAX_SIM = 120.0
+        AFORO_REF = 220.0
+        equivalent_flow = min(350.0, (total / MAX_SIM) * AFORO_REF)
+
         if total == 0:
             return np.array([[hour, day, 0.0, 0.25, 0.25, 0.1, 0.1, 0.3]], dtype=np.float32)
-            
-        autos = sum(1 for v in vehs if getattr(v.tipo, 'name', '') in ['AUTO', 'TAXI'])
+
+        autos   = sum(1 for v in vehs if getattr(v.tipo, 'name', '') in ['AUTO', 'TAXI'])
         pickups = sum(1 for v in vehs if getattr(v.tipo, 'name', '') == 'PICKUP')
-        buses = sum(1 for v in vehs if getattr(v.tipo, 'name', '') == 'BUS')
+        buses   = sum(1 for v in vehs if getattr(v.tipo, 'name', '') == 'BUS')
         urbanos = sum(1 for v in vehs if getattr(v.tipo, 'name', '') in ['TRANSP_URBANO', 'COMBI'])
-        trucks = sum(1 for v in vehs if getattr(v.tipo, 'name', '') in ['CAMION_LIGERO', 'CAMION_MEDIANO', 'CAMION_PESADO', 'ARTICULADOS', 'ARTICULADO'])
-        
-        auto_r = autos / total
+        trucks  = sum(1 for v in vehs if getattr(v.tipo, 'name', '') in
+                      ['CAMION_LIGERO', 'CAMION_MEDIANO', 'CAMION_PESADO', 'ARTICULADOS', 'ARTICULADO'])
+
+        auto_r   = autos   / total
         pickup_r = pickups / total
-        bus_r = buses / total
-        urban_r = urbanos / total
-        trucks_r = trucks / total
-        
-        feat = [hour, day, float(total), auto_r, pickup_r, bus_r, urban_r, trucks_r]
+        bus_r    = buses   / total
+        urban_r  = urbanos / total
+        trucks_r = trucks  / total
+
+        feat = [hour, day, equivalent_flow, auto_r, pickup_r, bus_r, urban_r, trucks_r]
+        return np.array([feat], dtype=np.float32)
+
+    def obtener_features_zona(self, sim, x1, y1, x2, y2, zona_capacity: float = 25.0):
+        hour = sim.hora_simulada
+        day = 0
+
+        vehs = [v for v in sim.vehiculos
+                if x1 <= v.posicion.x <= x2 and y1 <= v.posicion.y <= y2]
+        total = len(vehs)
+
+        # ── Normalización de escala ───────────────────────────────────────────
+        # La simulación tiene zonas con capacidad 10-30 veh simultáneos.
+        # El RF fue entrenado con aforo real: flujos de 0-280 veh/15 min.
+        # Conversión: (total / capacidad_zona) * 220
+        #   → zona al 100% llena = 220 aforo (flujo de saturación moderada)
+        #   → zona al  50% llena = 110 aforo (circulación normal)
+        #   → zona al  20% llena =  44 aforo (tráfico ligero)
+        AFORO_REF = 220.0
+        equivalent_flow = min(350.0, (total / max(1.0, zona_capacity)) * AFORO_REF)
+
+        if total == 0:
+            return np.array([[hour, day, 0.0, 0.25, 0.25, 0.1, 0.1, 0.3]], dtype=np.float32)
+
+        autos   = sum(1 for v in vehs if getattr(v.tipo, 'name', '') in ['AUTO', 'TAXI'])
+        pickups = sum(1 for v in vehs if getattr(v.tipo, 'name', '') == 'PICKUP')
+        buses   = sum(1 for v in vehs if getattr(v.tipo, 'name', '') == 'BUS')
+        urbanos = sum(1 for v in vehs if getattr(v.tipo, 'name', '') in ['TRANSP_URBANO', 'COMBI'])
+        trucks  = sum(1 for v in vehs if getattr(v.tipo, 'name', '') in
+                      ['CAMION_LIGERO', 'CAMION_MEDIANO', 'CAMION_PESADO', 'ARTICULADOS', 'ARTICULADO'])
+
+        auto_r   = autos   / total
+        pickup_r = pickups / total
+        bus_r    = buses   / total
+        urban_r  = urbanos / total
+        trucks_r = trucks  / total
+
+        feat = [hour, day, equivalent_flow, auto_r, pickup_r, bus_r, urban_r, trucks_r]
         return np.array([feat], dtype=np.float32)
 
     def predecir_congestion(self, sim):
@@ -122,25 +179,29 @@ class GestorMLTrafico:
         feat = self.obtener_features_globales(sim)
         return float(self.predictor.predict(feat)[0])
 
-    def predecir_congestion_zona(self, sim, x1, y1, x2, y2):
+    def predecir_congestion_zona(self, sim, x1, y1, x2, y2, zona_capacity: float = 25.0):
         if self.predictor is None or not ML_LIBRARIES_AVAILABLE:
             return 0.0
-        feat = self.obtener_features_zona(sim, x1, y1, x2, y2)
+        feat = self.obtener_features_zona(sim, x1, y1, x2, y2, zona_capacity)
         return float(self.predictor.predict(feat)[0])
 
     def clasificar_trafico(self, sim):
         if self.classifier is None or not ML_LIBRARIES_AVAILABLE:
-            return 0
+            return "Fluido"
         feat = self.obtener_features_globales(sim)
         return self.classifier.predict(feat)[0]
 
-    def clasificar_trafico_zona(self, sim, x1, y1, x2, y2):
+    def clasificar_trafico_zona(self, sim, x1, y1, x2, y2, zona_capacity: float = 25.0):
         if self.classifier is None or not ML_LIBRARIES_AVAILABLE:
             return "Fluido"
-        feat = self.obtener_features_zona(sim, x1, y1, x2, y2)
+        feat = self.obtener_features_zona(sim, x1, y1, x2, y2, zona_capacity)
         pred = self.classifier.predict(feat)[0]
+        # classifier.predict() ya devuelve strings ("Fluido", "Moderado", etc.)
+        # pero manejamos también el caso de índice numérico por retrocompatibilidad
+        if isinstance(pred, str):
+            return pred
         mapping = {0: "Fluido", 1: "Moderado", 2: "Congestionado", 3: "Crítico"}
-        return mapping.get(pred, "Fluido")
+        return mapping.get(int(pred), "Fluido")
 
     def clasificar_probabilidades(self, sim):
         return self.last_prediction_probs
@@ -320,34 +381,99 @@ class GestorIATrafico:
         self._priorizar_transporte_publico()
 
     def _vehiculo_detenido_por_semaforo(self, vehiculo: Vehiculo) -> bool:
-        """Devuelve True si el vehículo está parado esperando una fase no habilitada para su dirección."""
+        """Devuelve True si el vehículo está parado esperando una fase no habilitada para su dirección.
+        Usa un radio ampliado (100 px) para capturar vehículos que frenan en aproximación al semáforo.
+        """
         vid = id(vehiculo)
         cachedado = self._cache_semaforo.get(vid)
         if cachedado is not None:
             return cachedado
 
+        RADIO_SEM = 100  # px — ampliado para capturar colas de aproximación
         if hasattr(self.sim, '_semaforos_cercanos'):
-            candidatos = self.sim._semaforos_cercanos(vehiculo.posicion, 70)
+            candidatos = self.sim._semaforos_cercanos(vehiculo.posicion, RADIO_SEM)
         else:
             candidatos = self.sim.semaforos
+
         for semaforo in candidatos:
+            dist = vehiculo.posicion.distancia_a(semaforo.posicion)
+            if dist > RADIO_SEM:
+                continue
             dir_calle = vehiculo.calle_actual.direccion
             fase = semaforo.fase
+            # Si el semáforo está en verde para este vehículo, no lo cuenta como bloqueado
             if dir_calle == DireccionCalle.VERTICAL and fase == FaseSemaforo.NORTE_SUR:
                 continue
             if dir_calle == DireccionCalle.HORIZONTAL and fase == FaseSemaforo.ESTE_OESTE:
                 continue
             if dir_calle == DireccionCalle.DIAGONAL and fase == FaseSemaforo.GIRO:
                 continue
-            dist = vehiculo.posicion.distancia_a(semaforo.posicion)
-            if dist < 70:
-                self._cache_semaforo[vid] = True
-                return True
+            self._cache_semaforo[vid] = True
+            return True
         self._cache_semaforo[vid] = False
         return False
 
+    # ── Umbral de fila para reportar congestión real ───────────────────────────
+    _MIN_FILA_CONGESTION  = 3   # vehículos mínimos consecutivos parados
+    _DIST_FILA_MAX        = 80  # px máximo entre vehículos de la misma fila
+    _ESPERA_MIN_CONGESTION = 180  # frames mínimos parado sin semáforo para contar
+
+    def _detectar_fila_congestion(self, vehiculos_zona: list) -> int:
+        """Detecta la longitud máxima de una fila de congestión REAL.
+
+        Una fila real requiere:
+          1. Vehículo lento/parado (< 30 % velocidad máxima).
+          2. NO está parado por un semáforo en rojo (o, si lo está, lleva más
+             de _ESPERA_MIN_CONGESTION frames — señal de que hay más autos detrás).
+          3. Hay al menos _MIN_FILA_CONGESTION vehículos consecutivos dentro de
+             _DIST_FILA_MAX px entre sí formando una cadena.
+
+        Retorna la longitud de la fila más larga encontrada (0 si no hay fila).
+        """
+        # Candidatos: lentos que no están simplemente esperando el semáforo
+        candidatos = [
+            v for v in vehiculos_zona
+            if v.velocidad_actual < v.velocidad_maxima * 0.30
+            and (
+                not self._vehiculo_detenido_por_semaforo(v)
+                or v.tiempo_espera_acumulado > self._ESPERA_MIN_CONGESTION
+            )
+        ]
+
+        if len(candidatos) < self._MIN_FILA_CONGESTION:
+            return len(candidatos)  # nunca llega a fila mínima
+
+        # Construir cadenas: cada candidato se agrupa con el más cercano dentro del umbral
+        visitados = [False] * len(candidatos)
+        max_fila = 0
+
+        for i, vi in enumerate(candidatos):
+            if visitados[i]:
+                continue
+            # BFS/cadena greedy desde vi
+            cadena = [i]
+            visitados[i] = True
+            cola = [i]
+            while cola:
+                actual = cola.pop()
+                for j, vj in enumerate(candidatos):
+                    if visitados[j]:
+                        continue
+                    dist = candidatos[actual].posicion.distancia_a(vj.posicion)
+                    if dist <= self._DIST_FILA_MAX:
+                        visitados[j] = True
+                        cadena.append(j)
+                        cola.append(j)
+            if len(cadena) > max_fila:
+                max_fila = len(cadena)
+
+        return max_fila
+
     def _calcular_metricas_zona(self) -> Dict[str, dict]:
         metricas = {}
+        # Limpiar cache de semáforos al inicio de cada ciclo de actualización
+        self._cache_semaforo.clear()
+
         for nombre, (x1, y1, x2, y2) in self.zonas.items():
             vehiculos = [
                 v for v in self.sim.vehiculos
@@ -355,83 +481,109 @@ class GestorIATrafico:
             ]
             total = len(vehiculos)
             cap = self.capacidades.get(nombre, 20.0)
-            
-            semaforos_en_zona = [s for s in self.sim.semaforos if x1 <= s.posicion.x <= x2 and y1 <= s.posicion.y <= y2]
+
+            semaforos_en_zona = [
+                s for s in self.sim.semaforos
+                if x1 <= s.posicion.x <= x2 and y1 <= s.posicion.y <= y2
+            ]
             num_semaforos = len(semaforos_en_zona)
-            
+
             if total == 0:
                 metricas[nombre] = {
-                    "vehiculos": 0,
-                    "velocidad": 0.0,
-                    "detenidos": 0,
-                    "congestion": 0.0,
-                    "nivel": "Fluido",
-                    "densidad_vehicular": 0.0,
-                    "detenidos_ratio": 0.0,
-                    "lentos_ratio": 0.0,
-                    "tiempo_espera_ratio": 0.0,
-                    "saturacion_ratio": 0.0,
-                    "explicacion": "tránsito fluido",
-                    "sugerencia": "monitorear ciclos"
+                    "vehiculos": 0, "velocidad": 0.0, "detenidos": 0,
+                    "congestion": 0.0, "nivel": "Fluido",
+                    "densidad_vehicular": 0.0, "detenidos_ratio": 0.0,
+                    "lentos_ratio": 0.0, "tiempo_espera_ratio": 0.0,
+                    "saturacion_ratio": 0.0, "fila_congestion": 0,
+                    "explicacion": "tránsito fluido", "sugerencia": "monitorear ciclos"
                 }
                 continue
 
             velocidad_promedio = sum(v.velocidad_actual for v in vehiculos) / total
             densidad_vehicular = min(100.0, (total / cap) * 100.0)
-            
+
+            # ── Vehículos detenidos SIN causa de semáforo ────────────────────
             detenidos = sum(
                 1 for v in vehiculos
-                if v.velocidad_actual < 0.2 and not self._vehiculo_detenido_por_semaforo(v)
+                if v.velocidad_actual < 0.2
+                and not self._vehiculo_detenido_por_semaforo(v)
             )
             detenidos_ratio = (detenidos / total) * 100.0
 
+            # ── Vehículos lentos que no están esperando en luz roja reciente ─
             lentos = sum(
                 1 for v in vehiculos
                 if v.velocidad_actual < v.velocidad_maxima * 0.45
-                and not (self._vehiculo_detenido_por_semaforo(v) and v.tiempo_espera_acumulado <= 360)
+                and not (self._vehiculo_detenido_por_semaforo(v)
+                         and v.tiempo_espera_acumulado <= self._ESPERA_MIN_CONGESTION)
             )
             lentos_ratio = (lentos / total) * 100.0
 
             avg_espera_frames = sum(v.tiempo_espera_acumulado for v in vehiculos) / total
             tiempo_espera_ratio = min(100.0, (avg_espera_frames / 600.0) * 100.0)
 
-            veh_esperando_sem = sum(1 for v in vehiculos if self._vehiculo_detenido_por_semaforo(v))
-            saturacion_ratio = min(100.0, (veh_esperando_sem / max(1.0, num_semaforos)) * 50.0)
+            veh_esperando_sem = sum(
+                1 for v in vehiculos if self._vehiculo_detenido_por_semaforo(v)
+            )
+            saturacion_ratio = min(100.0,
+                (veh_esperando_sem / max(1.0, num_semaforos)) * 50.0)
+
+            # ── Detección de fila real de congestión ─────────────────────────
+            # Solo hay congestión real si hay una cadena de vehículos parados
+            # consecutivamente por causas distintas al semáforo.
+            fila_size = self._detectar_fila_congestion(vehiculos)
 
             if self.ml_bridge is not None and ML_LIBRARIES_AVAILABLE and self.sim.ia_activa:
                 try:
-                    congestion = self.ml_bridge.predecir_congestion_zona(self.sim, x1, y1, x2, y2)
-                    nivel = self.ml_bridge.clasificar_trafico_zona(self.sim, x1, y1, x2, y2)
+                    congestion_ml = self.ml_bridge.predecir_congestion_zona(
+                        self.sim, x1, y1, x2, y2, cap)
+                    nivel_ml = self.ml_bridge.clasificar_trafico_zona(
+                        self.sim, x1, y1, x2, y2, cap)
+                    # ── Guardia de fila: el ML no puede declarar Congestionado
+                    # o Crítico si no hay una fila real de vehículos ──────────
+                    congestion, nivel = self._aplicar_guardia_fila(
+                        congestion_ml, nivel_ml, fila_size,
+                        densidad_vehicular, detenidos_ratio, lentos_ratio,
+                        tiempo_espera_ratio, saturacion_ratio, total, velocidad_promedio
+                    )
                 except Exception as e:
                     print(f"[ML] Fallback a reglas por error: {e}")
                     congestion, nivel = self._calcular_congestion_reglas(
-                        densidad_vehicular, detenidos_ratio, lentos_ratio, 
-                        tiempo_espera_ratio, saturacion_ratio, total, velocidad_promedio
+                        densidad_vehicular, detenidos_ratio, lentos_ratio,
+                        tiempo_espera_ratio, saturacion_ratio, total,
+                        velocidad_promedio, fila_size
                     )
             else:
                 congestion, nivel = self._calcular_congestion_reglas(
-                    densidad_vehicular, detenidos_ratio, lentos_ratio, 
-                    tiempo_espera_ratio, saturacion_ratio, total, velocidad_promedio
+                    densidad_vehicular, detenidos_ratio, lentos_ratio,
+                    tiempo_espera_ratio, saturacion_ratio, total,
+                    velocidad_promedio, fila_size
                 )
 
             factores = []
-            if densidad_vehicular > 45:
-                factores.append("acumulación de vehículos")
-            if lentos_ratio > 50:
-                factores.append("baja velocidad")
-            if saturacion_ratio > 35:
-                factores.append("semáforo mal sincronizado")
-            if tiempo_espera_ratio > 35:
+            if fila_size >= self._MIN_FILA_CONGESTION:
+                factores.append(f"fila de {fila_size} vehículos detenidos")
+            if densidad_vehicular > 55:
+                factores.append("alta densidad vehicular")
+            if lentos_ratio > 60:
+                factores.append("baja velocidad generalizada")
+            if saturacion_ratio > 40:
+                factores.append("semáforo saturado")
+            if tiempo_espera_ratio > 40:
                 factores.append("tiempo de espera excesivo")
-            if total > cap * 0.8:
+            if total > cap * 0.85:
                 factores.append("exceso de ingreso vehicular")
 
             if not factores:
-                factores.append("retenciones menores")
+                factores.append("tránsito fluido")
 
-            explicacion = ", ".join(factores[:-1]) + " y " + factores[-1] if len(factores) > 1 else factores[0]
+            explicacion = (
+                ", ".join(factores[:-1]) + " y " + factores[-1]
+                if len(factores) > 1 else factores[0]
+            )
             sugerencia = "ampliar verde 8s y desviar autos" if nivel == "Crítico" else (
-                "ampliar verde 5s y sugerir rutas" if nivel == "Congestionado" else "monitorear ciclos"
+                "ampliar verde 5s y sugerir rutas" if nivel == "Congestionado"
+                else "monitorear ciclos"
             )
 
             metricas[nombre] = {
@@ -445,25 +597,77 @@ class GestorIATrafico:
                 "lentos_ratio": lentos_ratio,
                 "tiempo_espera_ratio": tiempo_espera_ratio,
                 "saturacion_ratio": saturacion_ratio,
+                "fila_congestion": fila_size,
                 "explicacion": explicacion,
                 "sugerencia": sugerencia
             }
         return metricas
 
-    def _calcular_congestion_reglas(self, dens, det_r, len_r, esp_r, sat_r, total, vel_prom):
-        congestion = (dens * 0.30 + det_r * 0.25 + len_r * 0.20 + esp_r * 0.15 + sat_r * 0.10)
-        factor_escala = min(1.0, total / 3.0)
+    def _calcular_congestion_reglas(self, dens, det_r, len_r, esp_r, sat_r,
+                                     total, vel_prom, fila_size: int = 0):
+        """Calcula congestión por reglas físicas.
+
+        Regla fundamental: SIN fila real de vehículos (fila_size < MIN),
+        el nivel nunca supera 'Moderado', independientemente de los ratios.
+        Los ratios de detenidos/lentos son significativos solo en conjunto
+        con la existencia de una cadena de vehículos parados.
+        """
+        # Peso de fila: escala la contribución de det_r y len_r según cuántos
+        # vehículos están realmente en cola (no solo esperando semáforo)
+        fila_peso = min(1.0, fila_size / max(1, self._MIN_FILA_CONGESTION))
+
+        # La densidad y el tiempo de espera contribuyen siempre;
+        # det_r y len_r solo pesan al haber fila real
+        congestion = (
+            dens  * 0.25
+            + det_r * 0.25 * fila_peso
+            + len_r * 0.20 * fila_peso
+            + esp_r * 0.15
+            + sat_r * 0.10
+            + min(fila_size, 10) * 2.5   # hasta +25 pts por fila de 10 veh
+        )
+        # Escalar por cantidad de vehículos (evita falsos positivos con 1-2 autos)
+        factor_escala = min(1.0, total / 5.0)
         congestion = min(100.0, max(0.0, congestion * factor_escala))
-        
-        if congestion >= 65 and total >= 4:
-            nivel = "Crítico"
-        elif congestion >= 40 or (total >= 4 and vel_prom < 0.6):
-            nivel = "Congestionado"
-        elif congestion >= 18 or vel_prom < 1.5:
-            nivel = "Moderado"
+
+        # ── Niveles con guardia de fila ───────────────────────────────────────
+        if fila_size >= self._MIN_FILA_CONGESTION:
+            # Con fila confirmada, umbrales normales
+            if congestion >= 70 and total >= 5:
+                nivel = "Crítico"
+            elif congestion >= 45 or (total >= 5 and vel_prom < 0.5):
+                nivel = "Congestionado"
+            elif congestion >= 25 or vel_prom < 1.2:
+                nivel = "Moderado"
+            else:
+                nivel = "Fluido"
         else:
-            nivel = "Fluido"
+            # Sin fila confirmada: máximo Moderado, y solo si hay señales claras
+            if congestion >= 35 and dens > 50 and vel_prom < 0.8:
+                nivel = "Moderado"
+            elif congestion >= 20 or vel_prom < 1.0:
+                nivel = "Moderado"
+            else:
+                nivel = "Fluido"
         return congestion, nivel
+
+    def _aplicar_guardia_fila(self, congestion_ml, nivel_ml, fila_size,
+                               dens, det_r, len_r, esp_r, sat_r, total, vel_prom):
+        """Valida la predicción ML contra la realidad física de fila.
+
+        El ML puede sobre-estimar la congestión cuando hay pocos vehículos
+        en zona pero la escala del aforo (veh/15 min) no coincide con el
+        conteo instantáneo de la simulación.  Este método actúa como árbitro:
+        si el ML dice Congestionado/Crítico pero no hay fila real, degrada
+        el nivel al máximo que justifican las reglas físicas.
+        """
+        if nivel_ml in ("Congestionado", "Crítico") and fila_size < self._MIN_FILA_CONGESTION:
+            # El ML exagera: recalcular con reglas y respetar el guardia de fila
+            return self._calcular_congestion_reglas(
+                dens, det_r, len_r, esp_r, sat_r, total, vel_prom, fila_size
+            )
+        # El ML dice Fluido/Moderado, o hay fila real que lo respaldada → aceptar ML
+        return congestion_ml, nivel_ml
 
     def _generar_recomendaciones(self) -> List[str]:
         recomendaciones = []

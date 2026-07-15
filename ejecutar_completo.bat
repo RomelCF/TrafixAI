@@ -27,18 +27,25 @@ if errorlevel 1 (
     exit /b 1
 )
 
-:: Verificar si los modelos ML existen, si no, entrenarlos
+:: Verificar si los modelos ML existen y estan bien entrenados
 echo [0/4] Verificando modelos de Machine Learning...
 if not exist "%~dp0backend\ml_models\predictor_congestion.pkl" (
-    echo      -> Modelos no encontrados. Entrenando desde el dataset...
+    echo      -> Modelos no encontrados. Entrenando desde aforo_vehicular.csv...
     py -3.11 "%~dp0backend\train_models.py"
     if errorlevel 1 (
         echo [ADVERTENCIA] El entrenamiento fallo. La IA usara modo heuristico.
     ) else (
-        echo      -> Modelos entrenados y guardados correctamente.
+        echo      -> Modelos RandomForest entrenados y guardados correctamente.
     )
 ) else (
-    echo      -> Modelos ML encontrados. RandomForest + DQN listos.
+    :: Verificar que el predictor este realmente entrenado (is_trained=True)
+    py -3.11 -c "import sys; sys.path.insert(0,'%~dp0backend'); from ml_engine import MLModelManager; p,c=MLModelManager('%~dp0backend\ml_models').load_models(); ok=getattr(p,'is_trained',False) and getattr(c,'is_trained',False); sys.exit(0 if ok else 1)" > nul 2>&1
+    if errorlevel 1 (
+        echo      -> Modelos encontrados pero no entrenados. Re-entrenando desde aforo_vehicular.csv...
+        py -3.11 "%~dp0backend\train_models.py"
+    ) else (
+        echo      -> Modelos ML OK: RandomForest Regressor + Clasificador listos.
+    )
 )
 echo.
 

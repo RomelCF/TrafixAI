@@ -13,10 +13,10 @@ const NOMBRES_MOSTRAR = {
 
 function estiloNivel(nivel) {
   switch (nivel) {
-    case 'Crítico':      return 'bg-[#ffb4ab]/10 text-[#ffb4ab] border border-[#ffb4ab]/20'
-    case 'Congestionado': return 'bg-[#ffb95f]/10 text-[#ffb95f] border border-[#ffb95f]/20'
-    case 'Moderado':     return 'bg-[#ffb95f]/10 text-[#ffb95f] border border-[#ffb95f]/20'
-    default:             return 'bg-[#4edea3]/10 text-[#4edea3] border border-[#4edea3]/20'
+    case 'Crítico':      return 'bg-[#ffb4ab]/10 text-[#ffb4ab] border border-[#ffb4ab]/20 transition-colors duration-500'
+    case 'Congestionado': return 'bg-[#ffb95f]/10 text-[#ffb95f] border border-[#ffb95f]/20 transition-colors duration-500'
+    case 'Moderado':     return 'bg-[#ffb95f]/10 text-[#ffb95f] border border-[#ffb95f]/20 transition-colors duration-500'
+    default:             return 'bg-[#4edea3]/10 text-[#4edea3] border border-[#4edea3]/20 transition-colors duration-500'
   }
 }
 
@@ -120,7 +120,7 @@ export default function ColumnaIzquierda({ metrics, loading, localidad = 'centro
                         <span className="text-[#414755]">—</span>
                       )}
                     </td>
-                    <td className={`p-3 font-bold ${data ? colorCongestion(data.nivel) : 'text-[#414755]'}`}>
+                    <td className={`p-3 font-bold transition-colors duration-500 ${data ? colorCongestion(data.nivel) : 'text-[#414755]'}`}>
                       {data ? `${data.congestion.toFixed(0)}%` : '—'}
                     </td>
                   </tr>
